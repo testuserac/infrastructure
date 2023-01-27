@@ -1,0 +1,16 @@
+[Unit]
+Description=Sausage-store
+
+[Service]
+User= {{backend_service_user}}
+Environment=REPORT_PATH={{backend_report_directory}}
+Environment=LOG_PATH={{backend_log_directory}}sausage-store-backend.log
+StandardOutput=append:{{backend_log_directory}}sausage-store-backend.log
+Restart=always
+ExecStart=/usr/bin/java \
+-Dmyserver.basePath='{{backend_lib_directory}}' \
+-Dmyserver.bindAddr='127.0.0.1' \
+-Dmyserver.bindPort='8080' \
+-Dmyserver.hostName='Sausage-store' \
+-jar '{{backend_lib_directory}}sausage-store-{{backend_maven_version}}.jar'
+SuccessExitStatus=143

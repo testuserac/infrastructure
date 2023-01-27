@@ -1,0 +1,14 @@
+[Unit]
+Description=store                                                                                                     
+
+[Service]
+Environment=LOG_PATH={{frontend_log_directory}}
+Environment=REPORT_PATH={{frontend_report_directory}}
+ExecStart=http-server /var/www-data/frontend/ -p 8080 --proxy http://localhost:8080
+StandardOutput=append:{{frontend_log_directory}}sausage-store-frontend.log
+Restart=always                                                                                                        
+User={{frontend_service_user}}                             
+Type=simple                                                                                                           
+
+[Install]
+WantedBy=multi-user.target 

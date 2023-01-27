@@ -1,0 +1,54 @@
+---
+ 
+- name: Adding a service user
+  user:
+    name: "{{backend_service_user}}"
+    create_home: no
+    shell: /sbin/nologin
+
+- name: create backend_lib and log directory
+  command: mkdir -p {{backend_lib_directory}} {{backend_log_directory}} {{backend_report_directory}}
+
+- name: add rights to the directory
+  become: true
+  command: chmod -R 767 /opt/sausage-store 
+  register: chmod_result
+
+- name: install JDK
+  become: true
+  apt: name='openjdk-16-jre-headless' state=latest
+
+- name: install lxml
+  become: true
+  apt: name='python3-lxml' state=latest
+
+- name: We use the maven_artifact module, it will download the application package from Nexus
+  maven_artifact:
+    username: '{{var_login}}'
+    password: '{{var_passwd}}'
+    dest: "{{backend_lib_directory}}sausage-store-{{backend_maven_version}}.jar"
+    repository_url: "{{backend_url_nexus}}"
+    group_id: "com.yandex.practicum.devops"
+    artifact_id: "sausage-store"
+    version: "{{backend_maven_version}}"
+
+- name: Configuration templating manages application settings using variables
+  template:
+    src: sausage-store-backend.service.j2
+    dest: /etc/systemd/system/sausage-store-backend.service
+
+- name: rights to the jar file
+  become: true
+  command: chmod -R 767 /opt/sausage-store
+  register: chmod_result
+  
+- name: reload systemd conf
+  become: true
+  systemd:
+    daemon_reload: yes
+
+- name: Done
+  become: true
+  service:
+    name: sausage-store-backend.service
+    state: restarted 

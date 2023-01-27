@@ -1,0 +1,7 @@
+
+- name: install Sausage store
+  hosts: all
+  become: true
+  roles:
+    - backend
+    - frontend

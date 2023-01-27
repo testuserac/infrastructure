@@ -1,0 +1,81 @@
+---
+
+- name: install npm
+  become: true
+  command: 'npm install --global http-server' 
+
+- name: ser rep
+  become: true
+  command: curl -fsSL https://deb.nodesource.com/setup_16.x
+
+- name: install nodejs
+  become: true
+  apt: name='nodejs' state=latest
+
+- name: create backend_lib directory
+  file:
+    path: '{{frontend_lib_directory}}'
+    state: directory
+
+
+- name: Adding a service user
+  user:
+    name: "{{frontend_service_user}}"
+    create_home: no
+    shell: /sbin/nologin
+
+- name: create backend_lib directory
+  file:
+    path: '{{frontend_lib_directory}}'
+    state: directory
+
+- name: frontend_report_directory
+  file:
+    path: '{{frontend_report_directory}}'
+    state: directory
+
+- name: frontend_log_directory
+  file:
+    path: '{{frontend_log_directory}}'
+    state: directory
+
+
+- name: add rights to the directory
+  command: chmod -R 0757 {{frontend_lib_directory}}
+  register: chmod_result
+
+- name: We use the maven_artifact module, it will download the application package from Nexus
+  get_url:
+    url_username: '{{var_login}}'
+    url_password: '{{var_passwd}}'
+    mode: 0757
+    dest: '{{frontend_lib_directory}}sausage-store.tar.gz'
+    url: "https://nexus.praktikum-services.ru/repository/sausage-store-saprykin-daniil-frontend/sausage-store/1.0.376802/sausage-store-1.0.376802.tar.gz"
+
+- name: add rights to the directory
+  become: true
+  command: chown -R www-data:www-data {{frontend_lib_directory}}
+  register: chmod_result
+
+- name: Exclude files from the archive
+  unarchive:
+    src: '{{frontend_lib_directory}}sausage-store.tar.gz'
+    dest: '{{frontend_lib_directory}}'
+    remote_src: yes
+
+- name: Configuration templating manages application settings using template
+  template:
+    src: sausage-store-frontend.service.j2
+    dest: /etc/systemd/system/sausage-store-frontend.service
+ 
+- name: reload systemd conf
+  become: true
+  systemd:
+    daemon_reload: yes
+
+- name: Done
+  become: true
+  service:
+    name: sausage-store-frontend.service
+    state: restarted 
+

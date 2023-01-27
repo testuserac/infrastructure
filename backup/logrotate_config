@@ -1,0 +1,7 @@
+/opt/log/sausage-store* {
+hourly
+dateext
+compress
+size 10M
+rotate 3
+}
